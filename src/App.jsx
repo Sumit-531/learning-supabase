@@ -1,35 +1,128 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from '/vite.svg'
-import './App.css'
+import { useEffect, useState } from "react";
+import "./App.css";
+import { supabase } from "./supabaseClient";
 
 function App() {
-  const [count, setCount] = useState(0)
+  const [newTask, setNewTask] = useState({title: "", description: ""});
+  const [tasks, setTasks] = useState([]);
+
+  const fetchTasks = async () => {
+
+    const { error, data } = await supabase
+     .from("tasks")
+     .select("*")
+     .order("created_at", {ascending: true});
+  
+  if(error) {
+      console.error('Error fetching task: ', error.message);
+      return;
+    }
+
+  setTasks(data);
+
+  }
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+
+    const { error } = await supabase
+     .from("tasks")
+     .insert(newTask)
+     .single();
+
+    if(error) {
+      console.error('Error adding task: ', error.message);
+      return;
+    }
+
+    setNewTask({title: "", description: ""});
+
+    // REFRESH TASK LIST AFTER ADD
+    fetchTasks();
+
+  }
+
+  const deleteTask = async (id) => {
+
+    const { error } = await supabase
+     .from("tasks")
+     .delete()
+     .eq("id", id);
+
+    if(error) {
+      console.error('Error deleting task: ', error.message);
+      return;
+    }
+
+    // REFRESH TASK LIST AFTER ADD
+    fetchTasks();
+  }
+
+  useEffect(() => {
+    fetchTasks();
+  }, []); 
+
+  console.log(tasks);
 
   return (
-    <>
-      <div>
-        <a href="https://vite.dev" target="_blank">
-          <img src={viteLogo} className="logo" alt="Vite logo" />
-        </a>
-        <a href="https://react.dev" target="_blank">
-          <img src={reactLogo} className="logo react" alt="React logo" />
-        </a>
-      </div>
-      <h1>Vite + React</h1>
-      <div className="card">
-        <button onClick={() => setCount((count) => count + 1)}>
-          count is {count}
+    <div style={{ maxWidth: "600px", margin: "0 auto", padding: "1rem" }}>
+      <h2>Task Manager CRUD</h2>
+
+      {/* Form to add a new task */}
+      <form onSubmit={handleSubmit} style={{ marginBottom: "1rem" }}>
+        <input
+          type="text"
+          placeholder="Task Title"
+          onChange={(e) => 
+            setNewTask((prev) => 
+              ({...prev, title: e.target.value}))
+        }
+          style={{ width: "100%", marginBottom: "0.5rem", padding: "0.5rem" }}
+        />
+        <textarea
+          placeholder="Task Description"
+          onChange={(e) =>
+            setNewTask((prev) => 
+              ({...prev, description: e.target.value}))
+          }
+          style={{ width: "100%", marginBottom: "0.5rem", padding: "0.5rem" }}
+        />
+        <button type="submit" style={{ padding: "0.5rem 1rem" }}>
+          Add Task
         </button>
-        <p>
-          Edit <code>src/App.jsx</code> and save to test HMR
-        </p>
-      </div>
-      <p className="read-the-docs">
-        Click on the Vite and React logos to learn more
-      </p>
-    </>
-  )
+      </form>
+
+      {/* List of Tasks */}
+      <ul style={{ listStyle: "none", padding: 0 }}>
+        {tasks.map((task, key) => (
+        <li
+        key={key}
+          style={{
+            border: "1px solid #ccc",
+            borderRadius: "4px",
+            padding: "1rem",
+            marginBottom: "0.5rem",
+          }}
+        >
+          <div>
+            <h3>{task.title}</h3>
+            <p>{task.description}</p>
+            <div>
+              <button style={{ padding: "0.5rem 1rem", marginRight: "0.5rem" }}>
+                Edit
+              </button>
+              <button style={{ padding: "0.5rem 1rem" }} 
+              onClick={() => deleteTask(task.id)}
+              >
+                Delete
+              </button>
+            </div>
+          </div>
+        </li>
+        ))}
+      </ul>
+    </div>
+  );
 }
 
-export default App
+export default App;
