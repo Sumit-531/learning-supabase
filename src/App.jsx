@@ -5,6 +5,7 @@ import { supabase } from "./supabaseClient";
 function App() {
   const [newTask, setNewTask] = useState({title: "", description: ""});
   const [tasks, setTasks] = useState([]);
+  const [newDescription, setNewDescription] = useState("");
 
   const fetchTasks = async () => {
 
@@ -51,6 +52,22 @@ function App() {
 
     if(error) {
       console.error('Error deleting task: ', error.message);
+      return;
+    }
+
+    // REFRESH TASK LIST AFTER ADD
+    fetchTasks();
+  }
+
+  const updateTask = async (id) => {
+
+    const { error } = await supabase
+     .from("tasks")
+     .update({description: newDescription})
+     .eq("id", id);
+
+    if(error) {
+      console.error('Error updating task: ', error.message);
       return;
     }
 
@@ -108,7 +125,14 @@ function App() {
             <h3>{task.title}</h3>
             <p>{task.description}</p>
             <div>
-              <button style={{ padding: "0.5rem 1rem", marginRight: "0.5rem" }}>
+              <textarea 
+              placeholder="Updated description..." 
+              onChange={(e) => setNewDescription(e.target.value)} 
+              />
+              <button 
+              style={{ padding: "0.5rem 1rem", marginRight: "0.5rem" }}
+              onClick={() => updateTask(task.id)}
+              >
                 Edit
               </button>
               <button style={{ padding: "0.5rem 1rem" }} 
