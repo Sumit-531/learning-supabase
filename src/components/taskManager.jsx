@@ -1,7 +1,8 @@
 import { useEffect, useState } from "react";
 import { supabase } from "../supabaseClient";
 
-function TaskManager() {
+
+function TaskManager({ session }) {
   const [newTask, setNewTask] = useState({title: "", description: ""});
   const [tasks, setTasks] = useState([]);
   const [newDescription, setNewDescription] = useState("");
@@ -27,8 +28,8 @@ function TaskManager() {
 
     const { error } = await supabase
      .from("tasks")
-     .insert(newTask)
-     .single();
+     .insert([{...newTask, email: session.user.email}])
+     .select();
 
     if(error) {
       console.error('Error adding task: ', error.message);
@@ -80,8 +81,6 @@ function TaskManager() {
 
   console.log(tasks);
 
-
-
   return (
     <div style={{ maxWidth: "600px", margin: "0 auto", padding: "1rem" }}>
       <h2>Task Manager CRUD</h2>
@@ -91,14 +90,16 @@ function TaskManager() {
         <input
           type="text"
           placeholder="Task Title"
+          value={newTask.title}
           onChange={(e) => 
             setNewTask((prev) => 
               ({...prev, title: e.target.value}))
-        }
+          }
           style={{ width: "100%", marginBottom: "0.5rem", padding: "0.5rem" }}
         />
         <textarea
           placeholder="Task Description"
+          value={newTask.description}
           onChange={(e) =>
             setNewTask((prev) => 
               ({...prev, description: e.target.value}))
@@ -112,9 +113,9 @@ function TaskManager() {
 
       {/* List of Tasks */}
       <ul style={{ listStyle: "none", padding: 0 }}>
-        {tasks.map((task, key) => (
+        {tasks.map((task) => (
         <li
-        key={key}
+          key={task.id}
           style={{
             border: "1px solid #ccc",
             borderRadius: "4px",
@@ -127,17 +128,20 @@ function TaskManager() {
             <p>{task.description}</p>
             <div>
               <textarea 
-              placeholder="Updated description..." 
-              onChange={(e) => setNewDescription(e.target.value)} 
+                placeholder="Updated description..." 
+                value={newDescription}
+                onChange={(e) => setNewDescription(e.target.value)} 
+                style={{ width: "100%", marginBottom: "0.5rem", padding: "0.5rem" }}
               />
               <button 
-              style={{ padding: "0.5rem 1rem", marginRight: "0.5rem" }}
-              onClick={() => updateTask(task.id)}
+                style={{ padding: "0.5rem 1rem", marginRight: "0.5rem" }}
+                onClick={() => updateTask(task.id)}
               >
                 Edit
               </button>
-              <button style={{ padding: "0.5rem 1rem" }} 
-              onClick={() => deleteTask(task.id)}
+              <button 
+                style={{ padding: "0.5rem 1rem" }} 
+                onClick={() => deleteTask(task.id)}
               >
                 Delete
               </button>

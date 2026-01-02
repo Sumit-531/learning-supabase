@@ -1,4 +1,5 @@
 import { useState, FormEvent, ChangeEvent } from "react";
+import { supabase } from "../supabaseClient";
 
 
 export const Auth = () => {
@@ -8,6 +9,24 @@ export const Auth = () => {
 
   const handleSubmit = async (e) => {
   e.preventDefault();
+
+  if(isSignUp){
+    
+    const {error: SignUpError} = await supabase.auth.signUp({email, password});
+        if (SignUpError) {
+            console.error("Error signing up: ", SignUpError.message);
+            return;
+        }
+
+  } else{
+
+    const {error: SignInError} = await supabase.auth.signInWithPassword({email, password});
+        if (SignInError) {
+            console.error("Error signing in: ", SignInError.message);
+            return;
+        }
+  }
+
   }
 
 return (
